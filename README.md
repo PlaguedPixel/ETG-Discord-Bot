@@ -11,3 +11,4 @@ The prefix for the bot is `etg:` or `etg!`. Here is a full list of commands and 
 2. Check to see if you have discord.py installed; if you don't, run the command `python -m pip install -U discord.py`
 3. Check to see if you have BeautifulSoup installed; if you don't, run the command `pip install beautifulsoup4`
 4. Check to see if you have requests installed; if you don't, run the command `pip install requests`
+5. The discord.py API is not compatible with Python 3.7, make sure you are using an earlier version of Python.

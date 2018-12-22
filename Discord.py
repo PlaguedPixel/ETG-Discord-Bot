@@ -50,12 +50,12 @@ async def list_servers():
             print(server.name)
         await asyncio.sleep(600)
 
-def log_error(e):
-    print(e)
-
 def is_good_response(resp):
     content_type = resp.headers['Content-Type'].lower()
     return resp.status_code == 200 and content_type is not None and content_type.find('html') > -1
+
+def log_error(e):
+    print(e)
 
 def web_request_mods(message, url, args, i, footer):
     modname = args
@@ -92,7 +92,6 @@ def web_request_mods(message, url, args, i, footer):
                                 addendum = "["+mod+"]("+a.get('href')+")\n"
                                 if len(message+addendum) <= 2000:
                                     message += addendum
-                                    print(message)
                             i += 1
                             if i == 5:
                                 message += view
@@ -103,7 +102,6 @@ def web_request_mods(message, url, args, i, footer):
                 if modname is not "":
                     i += 1
                     message = web_request_mods(message, url[:-len(str(i - 1))] + str(i), args, i, footer)
-                    print(message)
                     footer = message[1]
                     message = message[0]
                     if message is "":
