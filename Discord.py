@@ -80,7 +80,10 @@ def web_request_mods(message, url, args, i, footer):
                                 r = requests.get(a.get('href'))
                                 key = "Last Updated: "
                                 date = "".join([x.strip() for x in (str(r.content)[str(r.content).find(key)+len(key):str(r.content).find(key)+len(key)+10].split('-'))])
-                                date = int(date[len(date)-4:len(date)]+date[0:len(date)-4])
+                                if date.isnumeric():
+                                    date = int(date[len(date)-4:len(date)]+date[0:len(date)-4])
+                                else:
+                                    date = 99999999
                                 addendum = "[" + mod + "](" + a.get('href') + ")\n"
                                 if len(message + addendum) <= 2000 and addendum not in message:
                                     if date > 20180719:
