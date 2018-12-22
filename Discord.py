@@ -6,6 +6,7 @@ import discord
 from discord import Game
 from discord.ext.commands import Bot
 from requests import get
+import requests
 from requests.exceptions import RequestException
 from contextlib import closing
 from bs4 import BeautifulSoup
@@ -27,9 +28,11 @@ async def modlist(ctx, *args):
     if args is not ():
         modname = " ".join(args)
         prefix = "**Search Results:**\n"
-    output = web_request_mods("", url, modname, 0)
+    output = web_request_mods("", url, modname, 0, "")
     embed = discord.Embed(color=discord.Color.dark_orange())
-    embed.description = prefix+output
+    embed.description = prefix+output[0]
+    footer = output[1]
+    embed.set_footer(text=footer)
     embed.set_author(name="Mods", url=url, icon_url=MOD_ICON_URL)
     await client.send_message(ctx.message.channel, embed=embed)
 
@@ -54,7 +57,7 @@ def is_good_response(resp):
     content_type = resp.headers['Content-Type'].lower()
     return resp.status_code == 200 and content_type is not None and content_type.find('html') > -1
 
-def web_request_mods(message, url, args, i):
+def web_request_mods(message, url, args, i, footer):
     modname = args
     try:
         with closing(get(url, stream=True)) as resp:
@@ -66,7 +69,7 @@ def web_request_mods(message, url, args, i):
                     message = dl
                 html = BeautifulSoup(resp.content, 'html.parser')
                 if "No Mods found." in str(resp.content):
-                    return message
+                    return [message, footer]
                 for a in html.findAll('a', attrs={'href': re.compile("^https://")}):
                     if a.get('href').startswith("https://modworkshop.net/mydownloads.php?action=view_down&did="):
                         mod = a.text.replace('\n', '').replace('\r', '')
@@ -74,14 +77,22 @@ def web_request_mods(message, url, args, i):
                             if i is 0:
                                 i = 1
                             if modname.lower() in mod.lower():
+                                r = requests.get(a.get('href'))
+                                key = "Last Updated: "
+                                date = "".join([x.strip() for x in (str(r.content)[str(r.content).find(key)+len(key):str(r.content).find(key)+len(key)+10].split('-'))])
+                                date = int(date[len(date)-4:len(date)]+date[0:len(date)-4])
                                 addendum = "[" + mod + "](" + a.get('href') + ")\n"
                                 if len(message + addendum) <= 2000 and addendum not in message:
-                                    message += addendum
+                                    if date > 20180719:
+                                        message += addendum
+                                    else:
+                                        footer = "Pre-AG&D mod(s) hidden."
                         else:
                             if mod is not '':
                                 addendum = "["+mod+"]("+a.get('href')+")\n"
                                 if len(message+addendum) <= 2000:
                                     message += addendum
+                                    print(message)
                             i += 1
                             if i == 5:
                                 message += view
@@ -91,7 +102,10 @@ def web_request_mods(message, url, args, i):
                                 break
                 if modname is not "":
                     i += 1
-                    message = web_request_mods(message, url[:-len(str(i - 1))] + str(i), args, i)
+                    message = web_request_mods(message, url[:-len(str(i - 1))] + str(i), args, i, footer)
+                    print(message)
+                    footer = message[1]
+                    message = message[0]
                     if message is "":
                         message += "No results found! Try narrowing your search criteria.\n"
                 message = message[:2000]
@@ -101,8 +115,8 @@ def web_request_mods(message, url, args, i):
     except RequestException as e:
         log_error('Error during requests to {0} :\n{1}'.format(url, str(e)))
         return None
-
-    return message
+    #message = "".join(message)
+    return [message, footer]
 
 client.loop.create_task(list_servers())
 client.run(TOKEN)
